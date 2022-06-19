@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+
+const yargs = require('yargs');
+const { hideBin } = require('yargs/helpers');
+const start = require('../lib/cli/start');
+const stop = require('../lib/cli/stop');
+const restart = require('../lib/cli/restart');
+
+/**
+ * Command Line Interface for ZEBRA 
+ */
+const argv = yargs( hideBin(process.argv) )
+  .usage('usage: $0 <command>')
+  .command('start', 'Start the ZEBRA server.', (yargs) => {
+    return yargs
+      .option('port', {
+        alias: 'P',
+        type: 'number',
+        description: 'Port on which the ZEBRA server runs. By default, it uses port 3090',
+        requiresArg: true,
+      })
+      .option('config', {
+        alias: 'c',
+        type: 'string',
+        description: 'Loads ZEBRA config from the given YAML config file path.',
+        requiresArg: true,
+      });
+  })
+  .command('stop', 'Stop the running ZEBRA server.')
+  .command('restart', 'Restart the running ZEBRA server.')
+  .command('log', 'View the ZEBRA server logs.')
+  .help()
+  .alias('help', 'h')
+  .alias('version', 'v')
+  .wrap(null)
+  .argv;
+
+
+/** Handle each command */
+const command = argv._[0];
+if (command === 'start') {
+  start(argv.port, argv.config);
+} else if (command === 'stop') {
+  stop();
+} else if (command === 'restart') {
+  restart();
+} else {
+  yargs.showHelp();
+}

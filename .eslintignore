@@ -3,6 +3,7 @@ node_modules/
 
 # ignore package libs
 packages/*/lib/
+packages/*/bin/
 
 # ignore javascript files
 *.js

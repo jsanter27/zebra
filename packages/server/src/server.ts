@@ -35,4 +35,4 @@ const handleError: ErrorRequestHandler = (err, req, res) => {
 };
 app.use(handleError);
 
-export default app;
+export = app;
