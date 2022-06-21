@@ -1,7 +1,19 @@
-import { Table, Column, Model, Default } from "sequelize-typescript";
+import crypto from "crypto";
+import {
+  Table,
+  Column,
+  Model,
+  Default,
+  BeforeCreate,
+} from "sequelize-typescript";
 import logger from "debug";
 
 const debug = logger("zebra:config");
+
+/**
+ * Length of the default and randomly generated JWT secret.
+ */
+const DEFAULT_JWT_SECRET_LENGTH = 32;
 
 /**
  * Model to store ZEBRA configuration between runtimes.
@@ -16,22 +28,37 @@ class ZebraConfig extends Model {
   public port!: number;
 
   /**
+   * The secret used to sign the access token JWT. By default, the secret is a randomly generated 32 character string.
+   */
+  @Column
+  public jwtSecret!: string;
+
+  /**
+   * The amount of time, in hours, the access token is valid until expiration. By default, the value is one hour.
+   */
+  @Default("1h")
+  @Column
+  public jwtExpiration!: string;
+
+  /**
    * Routine that initializes (if necessary) and retrieves ZEBRA's config on startup.
    * @returns The previously existing or newly created ZEBRA config object.
    */
   public static async startup(): Promise<ZebraConfig> {
-    const config = this.findOne();
-    if (config != null) {
+    const config: ZebraConfig | null = await this.findOne();
+    if (!config) {
+      debug("No config found, creating initial default one...");
       return new this()
         .save()
         .then((newConfig) => {
-          debug(`Initial config created with port ${newConfig.port}.`);
+          debug(`Default config created with port ${newConfig.port}.`);
           return newConfig;
         })
         .catch((err) => {
           throw err;
         });
     }
+    debug(`Previous config found with port ${config.port}.`);
     return config;
   }
 
@@ -57,6 +84,19 @@ class ZebraConfig extends Model {
       .catch((err) => {
         throw err;
       });
+  }
+
+  /**
+   * Randomly generates a JWT secret if not manually set.
+   * @param config Instance of ZEBRA config about to be created.
+   */
+  @BeforeCreate
+  public static generateDefaultJwtSecret(config: ZebraConfig): void {
+    if (!config.jwtSecret) {
+      config.jwtSecret = crypto
+        .randomBytes(DEFAULT_JWT_SECRET_LENGTH)
+        .toString("hex");
+    }
   }
 }
 

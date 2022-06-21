@@ -2,9 +2,10 @@
     "extends": "../../tsconfig.json",
     "compilerOptions": {
         "experimentalDecorators": true,
-        "outDir": "./lib"
+        "outDir": "./lib",
+        "typeRoots": ["src/@types", "node_modules/@types"]
     },
     "include": [
         "./src"
-    ]
+    ],
 }

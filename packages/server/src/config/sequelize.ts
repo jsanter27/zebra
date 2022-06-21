@@ -3,7 +3,7 @@ import path from "path";
 
 const sequelize = new Sequelize({
   dialect: "sqlite",
-  storage: path.join(__dirname, "..", "..", "data", "db.sqlite"),
+  storage: path.join(__dirname, "..", "..", "data", "zebra.sqlite"),
   logging: false,
 });
 

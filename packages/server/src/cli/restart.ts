@@ -1,5 +1,5 @@
 import pm2 from "pm2";
-import { writeStatus, writeStdErr } from "./helpers";
+import { writeStatus, writeStdErr } from "../util/cli";
 
 export = function restart(): void {
   /** RESTART PM2 PROCESS */

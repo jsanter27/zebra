@@ -1,7 +1,7 @@
 import pm2 from "pm2";
 import path from "path";
 import fs from "fs";
-import { writeStatus, writeStdErr } from "./helpers";
+import { writeStatus, writeStdErr } from "../util/cli";
 
 export = function start(port?: number, configFile?: string): void {
   /** SET PORT IF PROVIDED */

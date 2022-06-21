@@ -15,7 +15,6 @@ var http = require('http');
 debug("Loading ZEBRA configuration...");
 configZebra(process.env.PORT, process.env.ZEBRA_CONFIG_FILE)
   .then((config) => {
-
     /**
      * Get port from environment and store in Express.
      */
@@ -92,7 +91,7 @@ configZebra(process.env.PORT, process.env.ZEBRA_CONFIG_FILE)
       var bind = typeof addr === 'string'
         ? 'pipe ' + addr
         : 'port ' + addr.port;
-      debug('Listening on ' + bind);
+      debug('Listening on ' + bind + '...');
     }
 
   })

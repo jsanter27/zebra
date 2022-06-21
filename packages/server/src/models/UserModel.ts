@@ -6,8 +6,13 @@ import {
   AllowNull,
   PrimaryKey,
   Is,
+  BeforeCreate,
+  BeforeUpdate,
+  BeforeBulkUpdate,
 } from "sequelize-typescript";
+import bcrypt from "bcrypt";
 import logger from "debug";
+import { UpdateOptions } from "sequelize";
 
 const debug = logger("zebra:users");
 
@@ -30,10 +35,15 @@ const PASSWORD_REGEX =
   /(?=(.*[0-9]))((?=.*[A-Za-z0-9])(?=.*[A-Z])(?=.*[a-z]))^.{8,}$/;
 
 /**
+ * The amount of salt rounds used to hash API key and password.
+ */
+const SALT_ROUNDS = 10;
+
+/**
  * Model used for ZEBRA users.
  */
 @Table
-class User extends Model {
+class UserModel extends Model {
   /**
    * User's unique identifying name.
    */
@@ -71,19 +81,60 @@ class User extends Model {
   public static async startup(): Promise<void> {
     const { count } = await this.findAndCountAll();
     if (count === 0) {
-      const initUser = new this({ username: "admin", password: "Admin2022" });
+      const initUser = new this({
+        username: "root",
+        password: "?Zebra3090",
+        role: "read-write",
+      });
       await initUser
         .save()
         .then((user) => {
-          debug(`Initial user created with username '${user.username}'.`);
+          debug(`Root user initalized with username '${user.username}'.`);
         })
         .catch((err) => {
           throw err;
         });
     } else {
-      debug(`Initial user already created.`);
+      debug(`Root user already initialized.`);
     }
+  }
+
+  /**
+   * Sets the parameter `individualHooks` to be `true` for all User queries. Removes the need
+   * for specifying with each query.
+   * @param options The options for the UPDATE query being passed through the hook.
+   */
+  @BeforeBulkUpdate
+  public static enableIndividualHooks(options: UpdateOptions): void {
+    options.individualHooks = true;
+  }
+
+  /**
+   * Hashes the given password and stores the encrypted version.
+   * @param user User instance that is being passed through the hook.
+   */
+  @BeforeCreate
+  @BeforeUpdate
+  public static async encryptPassword(user: UserModel): Promise<void> {
+    if (user.changed("password")) {
+      user.password = await bcrypt.hash(user.password, SALT_ROUNDS);
+    }
+  }
+
+  /**
+   * Checks the given password with the stored hash and verifies if it is correct.
+   * @param password Plain text password to compare with hash.
+   * @returns `true` if the password is a correct match, `false` if not.
+   */
+  public async checkPassword(password: string): Promise<boolean> {
+    return bcrypt.compare(password, this.password);
   }
 }
 
-export default User;
+/** ZEBRA's User type, for use in response body's or client-side. */
+export type User = Pick<
+  UserModel,
+  "username" | "role" | "changePasswordOnLogin"
+>;
+
+export default UserModel;

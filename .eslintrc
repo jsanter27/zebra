@@ -1,7 +1,8 @@
 {
     "extends": "airbnb-typescript-prettier",
     "rules": {
-        "class-methods-use-this": "off"
+        "class-methods-use-this": "off",
+        "no-param-reassign": "off"
     },
     "env": {
         "jest": true

@@ -5,9 +5,15 @@ import express, {
   Response,
   ErrorRequestHandler,
 } from "express";
+import cookieParser from "cookie-parser";
 import cors from "cors";
-import logger from "morgan";
+import morgan from "morgan";
+import logger from "debug";
 import createError from "http-errors";
+import passport from "passport";
+import zebraMiddleware from "./util/middleware";
+import authRouter from "./routes/auth";
+import "./config/passport";
 
 /** Express application */
 const app: Application = express();
@@ -15,8 +21,23 @@ const app: Application = express();
 /** Middleware */
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(logger("dev"));
+app.use(cookieParser());
+app.use(
+  morgan("dev", {
+    stream: {
+      write: (out) => {
+        const debug = logger("zebra:req");
+        debug(out);
+      },
+    },
+  })
+);
 app.use(cors());
+app.use(passport.initialize());
+app.use(zebraMiddleware);
+
+/** Add routes */
+app.use("/auth/v1", authRouter);
 
 /** Catch 404 and pass it to error handler */
 app.use((_req: Request, _res: Response, next: NextFunction) => {
