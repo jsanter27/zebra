@@ -42,7 +42,7 @@ const SALT_ROUNDS = 10;
 /**
  * Model used for ZEBRA users.
  */
-@Table
+@Table({ tableName: "users" })
 class UserModel extends Model {
   /**
    * User's unique identifying name.

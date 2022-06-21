@@ -12,7 +12,7 @@ import RmfConfig from "./RmfConfig";
 /**
  * Model used for custom ZEBRA metrics.
  */
-@Table
+@Table({ tableName: "metrics" })
 class ExposedRmfMetric extends Model {
   /**
    * Unique name or key for identifying the custom metric.

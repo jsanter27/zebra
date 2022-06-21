@@ -18,7 +18,7 @@ const DEFAULT_JWT_SECRET_LENGTH = 32;
 /**
  * Model to store ZEBRA configuration between runtimes.
  */
-@Table
+@Table({ tableName: "config" })
 class ZebraConfig extends Model {
   /**
    * The port that the ZEBRA application runs on.

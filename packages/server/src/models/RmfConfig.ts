@@ -19,7 +19,7 @@ interface RmfLparInfo {
   useMonitorThree?: boolean;
 }
 
-@Table
+@Table({ tableName: "rmf" })
 class RmfConfig extends Model {
   /**
    * Name of the LPAR that is running the RMF DDS.
