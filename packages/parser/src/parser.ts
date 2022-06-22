@@ -14,7 +14,7 @@ interface ZebraOptions {
  * @param options Additional options for authentication and RMF DDS.
  * @returns ZEBRA object that contains the different kinds of parsers to use.
  */
-export default function zebra(dds: string, options: ZebraOptions) {
+export = function zebra(dds: string, options: ZebraOptions) {
   return {
     postprocessor: new PostprocessorParser(
       dds,
@@ -27,4 +27,4 @@ export default function zebra(dds: string, options: ZebraOptions) {
       options.monitorThree
     ),
   };
-}
+};
