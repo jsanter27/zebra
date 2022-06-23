@@ -1,19 +1,15 @@
-import express, {
-  Application,
-  NextFunction,
-  Request,
-  Response,
-  ErrorRequestHandler,
-} from "express";
+import express, { Application, NextFunction, Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import morgan from "morgan";
 import logger from "debug";
-import createError from "http-errors";
+import swagger from "swagger-ui-express";
 import passport from "passport";
-import zebraMiddleware from "./util/middleware";
-import authRouter from "./routes/auth";
 import "./config/passport";
+import { ValidationError } from "sequelize";
+import ZebraRequestError from "./errors/ZebraRequestError";
+import ZebraInternalServerError from "./errors/ZebraInternalServerError";
+import { RegisterRoutes } from "./tsoa/routes";
 
 /** Express application */
 const app: Application = express();
@@ -34,26 +30,37 @@ app.use(
 );
 app.use(cors());
 app.use(passport.initialize());
-app.use(zebraMiddleware);
 
-/** Add routes */
-app.use("/auth/v1", authRouter);
+/** Route for accessing generated SwaggerUI */
+app.use(
+  "/docs",
+  swagger.serve,
+  async (_req: Request, res: Response): Promise<void> => {
+    res.send(swagger.generateHTML(await import("./tsoa/swagger.json")));
+  }
+);
 
-/** Catch 404 and pass it to error handler */
-app.use((_req: Request, _res: Response, next: NextFunction) => {
-  next(createError(404));
+/** Register automatically generated routes */
+RegisterRoutes(app);
+
+/** Custom request error handler */
+app.use("*", (err: Error, _req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof ZebraRequestError) {
+    res.status(err.status).json({
+      error: err.name,
+      message: err.message,
+    });
+  } else if (err instanceof ValidationError) {
+    res.status(400).json({
+      error: "Validation Error",
+      message: err.message,
+    });
+  } else if (err instanceof Error) {
+    const debug = logger("zebra:error");
+    debug(err.message);
+    res.status(500).json(ZebraInternalServerError.RESPONSE_BODY);
+  }
+  next();
 });
-
-/** Error handler */
-const handleError: ErrorRequestHandler = (err, req, res) => {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render("error");
-};
-app.use(handleError);
 
 export = app;

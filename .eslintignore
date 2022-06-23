@@ -7,3 +7,6 @@ packages/*/bin/
 
 # ignore javascript files
 *.js
+
+# ignore automatically generated server routes
+packages/server/src/router

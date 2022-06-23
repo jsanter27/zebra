@@ -1,8 +1,13 @@
 import { Request } from "express";
 import passport from "passport";
-import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
+import {
+  Strategy as JwtStrategy,
+  ExtractJwt,
+  StrategyOptions,
+} from "passport-jwt";
 import { Strategy as LocalStrategy } from "passport-local";
-import UserModel, { User } from "../models/UserModel";
+import ZebraRequestError from "../errors/ZebraRequestError";
+import UserModel, { UserObj } from "../models/UserModel";
 import ZebraConfig from "../models/ZebraConfig";
 
 /** Message that is set when login succeeds. */
@@ -55,38 +60,66 @@ passport.use(
     }
   )
 );
-// AUTH METHOD FOR VERIFYING JWT
-passport.use(
-  "jwt",
-  new JwtStrategy(
-    {
-      secretOrKeyProvider: (_req, _token, done) => {
-        ZebraConfig.findOne().then((config) => {
-          if (!config) {
-            done(new Error("Could not retrieve ZEBRA configuration"));
-          }
-          done(null, config?.jwtSecret);
-        });
-      },
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        cookieExtractor,
-        ExtractJwt.fromAuthHeaderWithScheme("jwt"),
-      ]),
-    },
-    async (user: User, done) => {
-      try {
-        done(null, user);
-      } catch (err) {
-        done(err);
+/** Options for JWT authentication. */
+const jwtOptions: StrategyOptions = {
+  secretOrKeyProvider: (_req, _token, done) => {
+    ZebraConfig.findOne().then((config) => {
+      if (!config) {
+        done(new Error("Could not retrieve ZEBRA configuration"));
       }
+      done(null, config?.jwtSecret);
+    });
+  },
+  jwtFromRequest: ExtractJwt.fromExtractors([
+    cookieExtractor,
+    ExtractJwt.fromAuthHeaderWithScheme("jwt"),
+  ]),
+};
+// AUTHENTICATION FOR ROUTES WITH `read` PERMISSIONS
+passport.use(
+  "read",
+  new JwtStrategy(jwtOptions, async (user: UserObj, done) => {
+    try {
+      done(null, user);
+    } catch (err) {
+      done(err);
     }
-  )
+  })
+);
+// AUTHENTICATION FOR ROUTES WITH `read-write` PERMISSIONS
+passport.use(
+  "read-write",
+  new JwtStrategy(jwtOptions, async (user: UserObj, done) => {
+    try {
+      if (user.role !== "read-write") {
+        done(
+          new ZebraRequestError(
+            401,
+            "Incorrect Permissions",
+            "User does not have `read-write` permissions."
+          )
+        );
+      }
+      done(null, user);
+    } catch (err) {
+      done(err);
+    }
+  })
 );
 // SERIALZE FUNCTION (DOESN"T REALLY DO ANYTHING BUT STILL NECESSARY)
 passport.serializeUser((user, done) => {
   done(null, user);
 });
 // DESERIALZE FUNCTION (DOESN"T REALLY DO ANYTHING BUT STILL NECESSARY)
-passport.deserializeUser((user: User, done) => {
+passport.deserializeUser((user: UserObj, done) => {
   done(null, user);
+});
+
+// EXPORT AUTHENTICATION METHODS
+export const authLogin = passport.authenticate("login", {
+  session: false,
+});
+export const authRead = passport.authenticate("read", { session: false });
+export const authReadWrite = passport.authenticate("read-write", {
+  session: false,
 });

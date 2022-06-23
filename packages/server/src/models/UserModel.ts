@@ -12,7 +12,7 @@ import {
 } from "sequelize-typescript";
 import bcrypt from "bcrypt";
 import logger from "debug";
-import { UpdateOptions } from "sequelize";
+import { UpdateOptions, Optional } from "sequelize";
 
 const debug = logger("zebra:users");
 
@@ -25,7 +25,7 @@ const debug = logger("zebra:users");
 const USERNAME_REGEX = /^[a-z0-9_-]{3,16}$/;
 
 /**
- * Regex used for validating ZEBRA passwords. Uses the following criteria:
+ * Regex used for validating passwords provided by users. Uses the following criteria:
  * - at least 1 lowercase letter
  * - at least 1 uppercase letter
  * - at least 1 number
@@ -40,12 +40,60 @@ const PASSWORD_REGEX =
 const SALT_ROUNDS = 10;
 
 /**
+ * The attributes of a User.
+ */
+export type UserAttributes = {
+  /**
+   * User's unique identifying name. Uses the following criteria:
+   * - alphanumeric characters
+   * - can include `_` and `-`
+   * - length of 3 to 16 characters
+   */
+  username: string;
+  /**
+   * User's password (is stored as a hash in the database).
+   */
+  password: string;
+  /**
+   * User's role / permissions. Default is `read`, where you can only GET metrics. Users with `read-write` permissions
+   * can change configuration, custom metrics, etc.
+   */
+  role: "read" | "read-write";
+  /**
+   * Flag indicating if the User will be forced to change password on next login.
+   */
+  changePasswordOnLogin: boolean;
+};
+
+/**
+ * The attributes needed for creating a User.
+ */
+export type UserCreationAttributes = Optional<
+  UserAttributes,
+  "role" | "changePasswordOnLogin"
+>;
+
+/**
+ * ZEBRA User object. For client-side use.
+ */
+export type UserObj = Omit<
+  UserAttributes,
+  "password" | "changePasswordOnLogin"
+>;
+
+/**
  * Model used for ZEBRA users.
  */
 @Table({ tableName: "users" })
-class UserModel extends Model {
+export default class UserModel extends Model<
+  UserAttributes,
+  UserCreationAttributes
+> {
   /**
-   * User's unique identifying name.
+   * User's unique identifying name. Uses the following criteria:
+   * - alphanumeric characters
+   * - can include `_` and `-`
+   * - length of 3 to 16 characters
    */
   @PrimaryKey
   @Is(USERNAME_REGEX)
@@ -53,16 +101,15 @@ class UserModel extends Model {
   public username!: string;
 
   /**
-   * User's password.
+   * User's password hash (stored as a hash in the dataabase).
    */
   @AllowNull(false)
-  @Is(PASSWORD_REGEX)
   @Column
   public password!: string;
 
   /**
    * User's role / permissions. Default is `read`, where you can only GET metrics. Users with `read-write` permissions
-   * can change ZEBRA config, DDS config, and custom exposed metrics.
+   * can change configuration, custom metrics, etc.
    */
   @Default("read")
   @Column
@@ -117,6 +164,9 @@ class UserModel extends Model {
   @BeforeUpdate
   public static async encryptPassword(user: UserModel): Promise<void> {
     if (user.changed("password")) {
+      if (!PASSWORD_REGEX.test(user.password)) {
+        throw new Error("Password doesn't follow the correct format.");
+      }
       user.password = await bcrypt.hash(user.password, SALT_ROUNDS);
     }
   }
@@ -130,11 +180,3 @@ class UserModel extends Model {
     return bcrypt.compare(password, this.password);
   }
 }
-
-/** ZEBRA's User type, for use in response body's or client-side. */
-export type User = Pick<
-  UserModel,
-  "username" | "role" | "changePasswordOnLogin"
->;
-
-export default UserModel;

@@ -3,3 +3,5 @@ data/
 conf/*.yml
 !conf/template.yml
 !conf/default.yml
+
+src/tsoa

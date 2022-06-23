@@ -5,8 +5,10 @@ import {
   Model,
   Default,
   BeforeCreate,
+  Is,
 } from "sequelize-typescript";
 import logger from "debug";
+import { Optional } from "sequelize";
 
 const debug = logger("zebra:config");
 
@@ -16,10 +18,66 @@ const debug = logger("zebra:config");
 const DEFAULT_JWT_SECRET_LENGTH = 32;
 
 /**
+ * How long the JWT is valid for, by default.
+ */
+const DEFAULT_JWT_EXPIRATION = "1h";
+
+/**
+ * Regex used for validating JWT expiration time.
+ *
+ * Follows the format of '{`value`}{`unit`}' where `value` is numeric and `unit`
+ * is `d` for days or `h` for hours.
+ *
+ * Examples:
+ * - `1h`: one hour
+ * - `6h`: six hours
+ * - `3d`: three days
+ * - `90d`: ninety days
+ */
+const JWT_EXPIRATION_REGEX = /[0-9]+[hd]/;
+
+/**
+ * The attributes of a ZEBRA config object.
+ */
+export type ZebraConfigAttributes = {
+  /**
+   * The port that the ZEBRA application runs on.
+   */
+  port: number;
+  /**
+   * The secret used to sign the access token JWT.
+   * By default, the secret is a randomly generated 32 character string.
+   */
+  jwtSecret: string;
+  /**
+   * The amount of time the access token is valid until expiration.
+   * Follows the format of '{`value`}{`unit`}' where `value` is numeric and `unit`
+   * is `d` for days or `h` for hours.
+   *
+   * Examples:
+   * - `1h`: one hour
+   * - `6h`: six hours
+   * - `3d`: three days
+   * - `90d`: ninety days
+   *
+   * By default, the value is one hour.
+   */
+  jwtExpiration: string;
+};
+
+export type ZebraConfigCreationAttributes = Optional<
+  ZebraConfigAttributes,
+  "port" | "jwtSecret" | "jwtExpiration"
+>;
+
+/**
  * Model to store ZEBRA configuration between runtimes.
  */
 @Table({ tableName: "config" })
-class ZebraConfig extends Model {
+export default class ZebraConfig extends Model<
+  ZebraConfigAttributes,
+  ZebraConfigCreationAttributes
+> {
   /**
    * The port that the ZEBRA application runs on.
    */
@@ -28,15 +86,27 @@ class ZebraConfig extends Model {
   public port!: number;
 
   /**
-   * The secret used to sign the access token JWT. By default, the secret is a randomly generated 32 character string.
+   * The secret used to sign the access token JWT.
+   * By default, the secret is a randomly generated 32 character string.
    */
   @Column
   public jwtSecret!: string;
 
   /**
-   * The amount of time, in hours, the access token is valid until expiration. By default, the value is one hour.
+   * The amount of time the access token is valid until expiration.
+   * Follows the format of '{`value`}{`unit`}' where `value` is numeric and `unit`
+   * is `d` for days or `h` for hours.
+   *
+   * Examples:
+   * - `1h`: one hour
+   * - `6h`: six hours
+   * - `3d`: three days
+   * - `90d`: ninety days
+   *
+   * By default, the value is one hour.
    */
-  @Default("1h")
+  @Default(DEFAULT_JWT_EXPIRATION)
+  @Is(JWT_EXPIRATION_REGEX)
   @Column
   public jwtExpiration!: string;
 
@@ -99,5 +169,3 @@ class ZebraConfig extends Model {
     }
   }
 }
-
-export default ZebraConfig;
