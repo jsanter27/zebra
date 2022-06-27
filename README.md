@@ -16,19 +16,18 @@
   - [System Requirements](#system-requirements)
     - [RMF Distributed Data Server](#rmf-distributed-data-server)
     - [Node.js](#nodejs)
-  - [Installation](#installation)
-  - [Development](#development)
+  - [How to Run](#how-to-run)
 - [Packages](#packages)
   - [`@zebra-omp/parser`](#zebra-ompparser)
   - [`@zebra-omp/server`](#zebra-ompserver)
-  - [`@zebra-omp/ui`](#zebra-ompui)
-  - [`@zebra-omp/types`](#zebra-omptypes)
 - [Supported Metrics](#supported-metrics)
   - [RMF](#rmf)
     - [RMF Postprocessor Reports](#rmf-postprocessor-reports)
     - [RMF Monitor III Reports](#rmf-monitor-iii-reports)
   - [SMF](#smf)
 - [Contribution](#contribution)
+  - [Conventional Commits](#conventional-commits)
+  - [Live Reloading for `@zebra-omp/server`](#live-reloading-for-zebra-ompserver)
 - [License](#license)
 
 # About
@@ -46,17 +45,22 @@ ZEBRA uses the [RMF Distributed Data Server](https://www.ibm.com/docs/en/zos/2.2
 ### Node.js
 ZEBRA requires the LTS Gallium version of Node.js (v16). Since ZEBRA is a Node.js application, it can run anywhere Node.js can run. It does **not** need to be run on z/OS to work.
 
-## Installation
+# How to Run
 
-TODO
-
-## Development
-
-Once you set up the development environment with Node.js, run
+To run ZEBRA, use the executable:
 ```
-npx lerna bootstrap
+npx zebra start
 ```
-to install all dependencies across the packages
+
+For more information about the `zebra` executable, use:
+```
+npx zebra --help
+```
+
+As an alternative, you can manually use the npm script:
+```
+npm start
+```
 
 # Packages
 This repository serves as a [monorepo](https://en.wikipedia.org/wiki/Monorepo) managing the various packages for ZEBRA. The following are the currently supported packages:
@@ -66,12 +70,6 @@ This package handles the parsing of XML data retrieved from RMF Distributed Data
 
 ## `@zebra-omp/server`
 This package creates a REST API that can be used to retrieve RMF data in ZEBRA format. Find out more [here](packages/server/README.md).
-
-## `@zebra-omp/ui`
-This package contains a user interface that can be interacted with instead of soley using the REST API. Find out more [here](packages/ui/README.md).
-
-## `@zebra-omp/types`
-This package holds shared typing information that is used across the other packages. Find out more [here](packages/types/README.md).
 
 # Supported Metrics
 This section provides some insight on what kind of data can be accessed wit ZEBRA.
@@ -100,6 +98,28 @@ Coming soon!
 We encourage anyone to contribute to ZEBRA, whether it be with code or knowledge of the performance metrics it uses! Check out the [Contribution Guidelines](CONTRIBUTING.md) for more on contributing code.
 
 The ZEBRA team meets biweekly on Thursdays at 8:00AM ET via Zoom to discuss plans and general topics. All are welcome! Checkout the [Zowe Calendar](https://lists.openmainframeproject.org/g/zowe-dev/calendar?calstart=2022-03-31) for the link!
+
+After cloning the source code from this repo, set up the development environment with Node.js by running:
+```
+npx lerna bootstrap
+```
+to install all dependencies across the packages.
+
+### Conventional Commits
+
+This project makes use of the [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) format. Commit messages must follow this format, otherwise the commit will be cancelled via `husky` hooks.
+
+### Live Reloading for `@zebra-omp/server`
+
+To take advantage of real-time changes when developing in the `server` directory, we have set up a script that allows for live reloading when changes are made. To run this first go to the `server` directory.
+```
+cd packages/server
+```
+Next, run the dev script using the following command:
+```
+npm run dev
+```
+Every time a change is made within the `src` directory, the script will automatically generate routes based off the controllers defined in the `controller` directory, transpile the TypeScript source files into Javascript, and then run the result.
 
 # License
 This program and the accompanying materials are made available under the terms of the Eclipse Public License v2.0 which accompanies this distribution, and is available at https://www.eclipse.org/legal/epl-v20.html
