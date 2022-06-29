@@ -13,6 +13,7 @@ import {
 import bcrypt from "bcrypt";
 import logger from "debug";
 import { UpdateOptions, Optional } from "sequelize";
+import ZebraRequestError from "../errors/ZebraRequestError";
 
 const debug = logger("zebra:users");
 
@@ -165,7 +166,11 @@ export default class UserModel extends Model<
   public static async encryptPassword(user: UserModel): Promise<void> {
     if (user.changed("password")) {
       if (!PASSWORD_REGEX.test(user.password)) {
-        throw new Error("Password doesn't follow the correct format.");
+        throw new ZebraRequestError(
+          400,
+          "Invalid Password",
+          "Password does not follow correct format."
+        );
       }
       user.password = await bcrypt.hash(user.password, SALT_ROUNDS);
     }
