@@ -47,7 +47,6 @@ type RmfConfigDeleteResponse = {
 export class RmfConfigController extends Controller {
   /**
    * Creates an RMF DDS configuration for the given LPAR.
-   * @returns Promise containing the RMF Config object after creation.
    */
   @Post("/{lpar}")
   @SuccessResponse("201", "RMF Configuration Created")
@@ -57,7 +56,7 @@ export class RmfConfigController extends Controller {
     usePostprocessor: true,
     useMonitorThree: true,
   })
-  @Response("400", "RMF Config Already Exists for LPAR")
+  @Response("400", "RMF Config Already Exists")
   @Response("401", "Unauthorized", "Unauthorized")
   @Response(
     "500",
@@ -80,8 +79,8 @@ export class RmfConfigController extends Controller {
       if (prev) {
         throw new ZebraRequestError(
           400,
-          "RMF Config Already Exists for LPAR",
-          "An RMF DDS configuration already exists for the provided LPAR."
+          "RMF Config Already Exists",
+          `An RMF DDS configuration already exists for ${lpar}.`
         );
       }
       const newRmfConfig = await new RmfConfig({ name: lpar, ...body }).save();
@@ -123,7 +122,7 @@ export class RmfConfigController extends Controller {
         throw new ZebraRequestError(
           404,
           "RMF Config Not Found",
-          "An RMF configuration does not exist for the given LPAR."
+          `An RMF configuration does not exist for ${lpar}.`
         );
       }
       return {
@@ -178,6 +177,9 @@ export class RmfConfigController extends Controller {
     }
   }
 
+  /**
+   * Updates the RMF configuration for the given LPAR.
+   */
   @Put("/{lpar}")
   @SuccessResponse("201", "RMF Configuration Updated")
   @Example<RmfConfigResponse>({
@@ -218,7 +220,7 @@ export class RmfConfigController extends Controller {
         throw new ZebraRequestError(
           404,
           "RMF Config Not Found",
-          "An RMF configuration does not exist for the given LPAR."
+          `An RMF configuration does not exist for ${lpar}.`
         );
       }
       const updatedRmfConfig = await rmfConfig.update(body);
@@ -233,6 +235,9 @@ export class RmfConfigController extends Controller {
     }
   }
 
+  /**
+   * Deletes the RMF configuration for the given LPAR.
+   */
   @Delete("/{lpar}")
   @SuccessResponse("201", "RMF Configuration Updated")
   @Example<RmfConfigDeleteResponse>({
@@ -262,14 +267,14 @@ export class RmfConfigController extends Controller {
         throw new ZebraRequestError(
           404,
           "RMF Config Not Found",
-          "An RMF configuration does not exist for the given LPAR."
+          `An RMF configuration does not exist for ${lpar}`
         );
       }
       await RmfConfig.destroy({
         where: { name: lpar },
       });
       return {
-        message: "The RMF configuration for LPAR 'RPRT' has been deleted.",
+        message: `The RMF configuration for LPAR '${lpar}' has been deleted.`,
       };
     } catch (err) {
       throw getZebraRequestError(err);

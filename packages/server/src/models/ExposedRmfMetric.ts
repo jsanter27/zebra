@@ -11,6 +11,8 @@ import {
   DataType,
   AfterFind,
   BeforeBulkUpdate,
+  PrimaryKey,
+  AfterSave,
 } from "sequelize-typescript";
 import { Optional, UpdateOptions } from "sequelize";
 import RmfConfig from "./RmfConfig";
@@ -28,6 +30,10 @@ export type ExposedRmfMetricFilter = {
  * The attributes of an exposed RMF metric.
  */
 export type ExposedRmfMetricAttributes = {
+  /**
+   * Unique identifying name used for the Exposed Metric configuration.
+   */
+  name: string;
   /**
    * Description used to identify indicate the purpose
    * of the custom metric.
@@ -48,7 +54,7 @@ export type ExposedRmfMetricAttributes = {
   /**
    * Filter applied to extracting the metric field.
    */
-  filter?: ExposedRmfMetricFilter;
+  filter?: ExposedRmfMetricFilter[];
   /**
    * The key whose value will be used for the metric.
    */
@@ -70,11 +76,20 @@ class ExposedRmfMetric extends Model<
   ExposedRmfMetricCreationAttributes
 > {
   /**
+   * Identifying name used for the Exposed Metric configuration.
+   */
+  @PrimaryKey
+  @AllowNull(false)
+  @Is("nonempty metric name", (val) => val !== "")
+  @Column
+  public name!: string;
+
+  /**
    * Description used to identify indicate the purpose
    * of the custom metric.
    */
   @AllowNull(false)
-  @Is("nonempty description", (val) => val !== "")
+  @Is("nonempty metric description", (val) => val !== "")
   @Column
   public desc!: string;
 
@@ -105,7 +120,7 @@ class ExposedRmfMetric extends Model<
    */
   @Default("{}")
   @Column(DataType.STRING)
-  public filter!: ExposedRmfMetricFilter;
+  public filter!: ExposedRmfMetricFilter[];
 
   /**
    * The key whose value will be used for the metric.
@@ -147,12 +162,13 @@ class ExposedRmfMetric extends Model<
    * @param metric ExposedRmfMetric instance that is being created or updated.
    */
   @AfterFind
+  @AfterSave
   public static async deserializeFilter(
     metric: ExposedRmfMetric
   ): Promise<void> {
     metric.filter = JSON.parse(
       metric.filter as unknown as string
-    ) as ExposedRmfMetricFilter;
+    ) as ExposedRmfMetricFilter[];
   }
 }
 
